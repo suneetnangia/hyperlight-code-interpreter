@@ -1,12 +1,11 @@
-# Hyperlight VM Examples
+# Hyperlight VM
 
-Run JavaScript and Rust guest code inside [Hyperlight](https://github.com/hyperlight-dev/hyperlight) micro-VMs using KVM.
+Run JavaScript inside [Hyperlight](https://github.com/hyperlight-dev/hyperlight) micro-VMs using KVM.
 
 ## Prerequisites
 
 - **Rust 1.89+** — install via [rustup](https://rustup.rs)
 - **Linux with KVM** — a bare-metal Linux host or a VM with nested virtualization enabled
-- **clang v16+** — required for building the guest runtime
 
 ### KVM Setup
 
@@ -31,27 +30,10 @@ groups | grep kvm
 
 | Directory | Description |
 |-----------|-------------|
-| `guest/` | A `no_std` Rust binary that runs inside the Hyperlight micro-VM |
-| `host/` | Host application that creates a sandbox and calls guest functions |
 | `js-host/` | Runs JavaScript inside a Hyperlight micro-VM via [hyperlight-js](https://github.com/hyperlight-dev/hyperlight-js), with a host plugin system |
 | `js-host/src/plugins/` | Host-side plugins (math, time, kv) callable from guest JS via ES module imports |
-| `hyperlight-js/` | Workspace containing the hyperlight-js library, runtime, and Node.js bindings |
 
-## Running the Examples
-
-### Host + Guest (Rust)
-
-Build the guest binary first, then run the host:
-
-```bash
-# Build the guest (no_std binary targeting the Hyperlight VM)
-cd guest && cargo build --release && cd ..
-
-# Run the host, which loads the guest into a micro-VM
-cd host && cargo run --release
-```
-
-### JavaScript Host
+## Running
 
 Run JavaScript code inside a Hyperlight micro-VM with QuickJS:
 
@@ -112,26 +94,6 @@ proto.load_runtime()           →  JSSandbox  (registrations frozen)
 sandbox.add_handler() / get_loaded_sandbox()
         ↓
 loaded.handle_event()          →  JSON result
-```
-
-### Hyperlight-JS Examples
-
-The `hyperlight-js` workspace includes additional examples. Requires [just](https://github.com/casey/just):
-
-```bash
-cd hyperlight-js
-
-# Build everything (runtime + library)
-just build
-
-# Run examples
-just run-examples
-
-# Run a specific example
-cargo run --example run_handler
-
-# Run tests
-just test
 ```
 
 ## Dev Container
