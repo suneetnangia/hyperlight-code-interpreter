@@ -9,6 +9,8 @@ Run JavaScript inside [Hyperlight](https://github.com/hyperlight-dev/hyperlight)
 
 ### KVM Setup
 
+> **Note:** If you're using the included [dev container](#dev-container), KVM access is configured automatically — skip this section.
+
 Hyperlight requires access to `/dev/kvm`. Add your user to the `kvm` group:
 
 ```bash
