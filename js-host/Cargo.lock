@@ -872,6 +872,7 @@ dependencies = [
 [[package]]
 name = "hyperlight-js"
 version = "0.1.1"
+source = "git+https://github.com/hyperlight-dev/hyperlight-js?rev=764646b804bb6e2659afa9d392b92361fc238946#764646b804bb6e2659afa9d392b92361fc238946"
 dependencies = [
  "anyhow",
  "cargo-hyperlight",
@@ -890,6 +891,7 @@ dependencies = [
 [[package]]
 name = "hyperlight-js-runtime"
 version = "0.1.1"
+source = "git+https://github.com/hyperlight-dev/hyperlight-js?rev=764646b804bb6e2659afa9d392b92361fc238946#764646b804bb6e2659afa9d392b92361fc238946"
 dependencies = [
  "anyhow",
  "base64",

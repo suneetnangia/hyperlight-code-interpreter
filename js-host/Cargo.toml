@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-hyperlight-js = { path = "../hyperlight-js/src/hyperlight-js" }
+hyperlight-js = { git = "https://github.com/hyperlight-dev/hyperlight-js", rev = "764646b804bb6e2659afa9d392b92361fc238946" }
 serde_json = "1.0"
 anyhow = "1.0"
