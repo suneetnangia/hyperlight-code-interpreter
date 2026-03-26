@@ -1,0 +1,9 @@
+[package]
+name = "js-host"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+hyperlight-js = { path = "../hyperlight-js/src/hyperlight-js" }
+serde_json = "1.0"
+anyhow = "1.0"

@@ -1,0 +1,34 @@
+{
+  "name": "Hyperlight VM Examples",
+
+  "image": "ghcr.io/hyperlight-dev/hyperlight-devcontainer:latest",
+
+  "containerUser": "vscode",
+  "containerEnv": {
+    "DEVICE": "/dev/kvm",
+    "REMOTE_USER": "vscode",
+    "REMOTE_GROUP": "vscode"
+  },
+
+  "runArgs": [
+    "--device=/dev/kvm"
+  ],
+
+  "postStartCommand": "bash .devcontainer/setup.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "tamasfe.even-better-toml",
+        "serayuzgur.crates"
+      ],
+      "settings": {
+        "rust-analyzer.rustfmt.extraArgs": [
+          "+nightly"
+        ]
+      }
+    }
+  }
+}
