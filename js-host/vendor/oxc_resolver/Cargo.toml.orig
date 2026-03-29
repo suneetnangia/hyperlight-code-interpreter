@@ -1,0 +1,169 @@
+[workspace]
+members = ["napi"]
+resolver = "2"
+
+[workspace.package]
+authors = ["Boshen <boshenc@gmail.com>"]
+categories = ["development-tools"]
+edition = "2024"
+homepage = "https://github.com/oxc-project/oxc-resolver"
+include = ["/src", "/examples", "/benches"]
+keywords = ["node", "resolve", "cjs", "esm", "enhanced-resolve"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/oxc-project/oxc-resolver"
+rust-version = "1.88.0"
+description = "ESM / CJS module resolution"
+
+[workspace.dependencies]
+oxc_resolver = { version = "11.19.1", path = "." }
+
+[package]
+name = "oxc_resolver"
+version = "11.19.1"
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+homepage.workspace = true
+include.workspace = true
+keywords.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description.workspace = true
+
+[lib]
+doctest = false
+
+[[bench]]
+name = "resolver"
+harness = false
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+# restriction
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+# I like the explicitness of this rule as it removes confusion around `clone`.
+# This increases readability, avoids `clone` mindlessly and heap allocating on accident.
+clone_on_ref_ptr = "warn"
+# These two are mutually exclusive, I like `mod.rs` files for better fuzzy searches on module entries.
+self_named_module_files = "warn" # "-Wclippy::mod_module_files"
+empty_drop = "warn"
+empty_structs_with_brackets = "warn"
+exit = "warn"
+filetype_is_file = "warn"
+get_unwrap = "warn"
+impl_trait_in_params = "warn"
+rc_buffer = "warn"
+rc_mutex = "warn"
+rest_pat_in_fully_bound_structs = "warn"
+unnecessary_safety_comment = "warn"
+undocumented_unsafe_blocks = "warn"
+too_many_arguments = "allow"
+pedantic = { level = "warn", priority = -1 }
+# This rule is too pedantic, I don't want to force this because naming things are hard.
+module_name_repetitions = "allow"
+doc_markdown = "allow"
+# I want to write the best Rust code so both pedantic and nursery is enabled.
+# We should only disable rules globally if they are either false positives, chaotic, or does not make sense.
+nursery = { level = "warn", priority = -1 }
+literal_string_with_formatting_args = "allow"
+missing_const_for_fn = "allow"
+
+[[example]]
+name = "dir"
+
+[dependencies]
+cfg-if = "1"
+compact_str = "0.9"
+fast-glob = "1"
+indexmap = { version = "2", features = ["serde"] }
+json-strip-comments = "3.1"
+nodejs-built-in-modules = "1.0.0"
+once_cell = "1" # Use `std::sync::OnceLock::get_or_try_init` when it is stable.
+papaya = "0.2"
+rustc-hash = { version = "2" }
+serde = { version = "1", features = ["derive"] } # derive for Deserialize from package.json
+serde_json = { version = "1", features = [
+  "preserve_order",
+] } # preserve_order: package_json.exports requires order such as `["require", "import", "default"]`
+simdutf8 = { version = "0.1" }
+thiserror = "2"
+tracing = "0.1"
+
+pnp = { version = "0.12.8", optional = true }
+
+document-features = { version = "0.2.12", optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+url = "2"
+
+[target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
+rustix = { version = "1.1.3", features = ["fs"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.62.2", features = ["Win32_Storage_FileSystem"] }
+
+[target.'cfg(target_endian = "little")'.dependencies]
+# simd-json only works on little-endian systems
+simd-json = { version = "0.17.0", default-features = false, features = ["runtime-detection"] }
+self_cell = "1" # Used by simd implementation for self-referential struct
+
+[dev-dependencies]
+criterion2 = { version = "3.0.2", default-features = false }
+dirs = { version = "6.0.0" }
+fancy-regex = { version = "^0.17.0", default-features = false, features = ["std"] }
+pico-args = "0.5.0"
+rayon = { version = "1.11.0" }
+vfs = "0.12.2" # for testing with in memory file system
+walkdir = "2" # for loading benchmark fixtures
+
+[target.'cfg(target_os = "windows")'.dev-dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Storage", "Win32_Storage_FileSystem"] }
+
+[features]
+default = []
+## [Yarn Plug'n'Play](https://yarnpkg.com/features/pnp)
+yarn_pnp = ["pnp"]
+# For codspeed benchmark
+codspeed = ["criterion2/codspeed"]
+
+[profile.dev]
+# Disabling debug info speeds up local and CI builds,
+# and we don't rely on it for debugging that much.
+debug = false
+
+[profile.test]
+# Disabling debug info speeds up local and CI builds,
+# and we don't rely on it for debugging that much.
+debug = false
+
+[profile.wasm-test]
+inherits = "test"
+debug = true
+opt-level = "z" # Avoid too many locals errors during wasmtime testing
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+# For napi
+[profile.release]
+# Configurations explicitly listed here for clarity.
+# Using the best options for performance.
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = "symbols" # set to `false` for debug information
+debug = false # set to `true` for debug information
+panic = "abort" # Let it crash and force ourselves to write safe Rust.
+
+[profile.release.package.regex-automata]
+opt-level = "z" # Optimize for size.
+
+[profile.release.package.regex-syntax]
+opt-level = "z" # Optimize for size.

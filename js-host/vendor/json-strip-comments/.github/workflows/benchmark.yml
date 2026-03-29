@@ -1,0 +1,47 @@
+name: Benchmark
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '**/*.rs'
+      - 'Cargo.lock'
+      - '.github/workflows/benchmark.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.rs'
+      - 'Cargo.lock'
+      - '.github/workflows/benchmark.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
+
+      - uses: oxc-project/setup-rust@83350c0ef69ec34f00be596f1cb9302179b9f43d # v1.0.9
+        with:
+          cache-key: benchmark
+          save-cache: ${{ github.ref_name == 'main' }}
+          tools: cargo-codspeed
+
+      - name: Build benchmark
+        run: cargo codspeed build --features codspeed
+
+      - name: Run benchmark
+        uses: CodSpeedHQ/action@6a8e2b874c338bf81cc5e8be715ada75908d3871 # v4.3.4
+        timeout-minutes: 15
+        with:
+          run: cargo codspeed run
+          mode: instrumentation
+          token: ${{ secrets.CODSPEED_TOKEN }}

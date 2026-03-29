@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+
+name: CI
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  run-tests:
+    name: Run tests on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+    - uses: Swatinem/rust-cache@v2
+    - uses: extractions/setup-just@v3
+    - name: Enable kvm
+      if: runner.os == 'Linux'
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+    - name: Install cargo-hyperlight
+      shell: bash
+      run: just install
+    - name: Build guest example
+      shell: bash
+      run: just build-guest
+    - name: Run example
+      shell: bash
+      run: just run-guest
+
+  spelling:
+    name: Spell check with typos
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - name: Spell Check Repo
+      uses: crate-ci/typos@master
+  
+  check:
+    name: Lint on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
+      - uses: extractions/setup-just@v3
+      - name: Setup nightly toolchain
+        shell: bash
+        run: rustup toolchain install nightly --component rustfmt # needed to run rustfmt in nightly toolchain
+      - name: Install cargo-hyperlight
+        shell: bash
+        run: just install
+      - name: Check formatting
+        shell: bash
+        run: just fmt
+      - name: Check clippy
+        shell: bash
+        run: just clippy

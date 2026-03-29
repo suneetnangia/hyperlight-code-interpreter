@@ -1,0 +1,23 @@
+[package]
+name = "elfcore"
+version = "2.0.2"
+edition = "2021"
+description = "elfcore is a crate to create ELF core dumps for processes on Linux."
+license = "MIT"
+authors = ["Microsoft"]
+repository = "https://github.com/microsoft/elfcore"
+keywords = ["elf", "coredump", "debugging"]
+categories = ["development-tools::debugging", "os::linux-apis"]
+
+[dependencies]
+smallvec.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+zerocopy.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+nix.workspace = true
+
+[lints]
+workspace = true

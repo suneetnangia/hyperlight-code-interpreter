@@ -1,0 +1,61 @@
+name: CI
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
+      - uses: oxc-project/setup-rust@83350c0ef69ec34f00be596f1cb9302179b9f43d # v1.0.9
+        with:
+          save-cache: ${{ github.ref_name == 'main' }}
+          components: clippy
+      - run: cargo check
+      - run: cargo clippy
+      - run: RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --document-private-items
+
+  test-wasm32-unknown-unknown:
+    name: Check wasm32-unknown-unknown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
+
+      - uses: oxc-project/setup-rust@83350c0ef69ec34f00be596f1cb9302179b9f43d # v1.0.9
+        with:
+          save-cache: ${{ github.ref_name == 'main' }}
+          cache-key: wasm
+          tools: wasm-pack
+
+      - name: Check
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo check -p json-strip-comments-wasm --target wasm32-unknown-unknown
+
+      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+        with:
+          package_json_file: ./wasm/package.json
+
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          cache: pnpm
+          cache-dependency-path: ./wasm/pnpm-lock.yaml
+
+      - working-directory: wasm
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+          pnpm run test
