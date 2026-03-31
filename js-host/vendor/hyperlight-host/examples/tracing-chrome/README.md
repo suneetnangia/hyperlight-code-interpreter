@@ -1,1 +1,0 @@
-This is an example of using the tracing-chrome tracing-subscriber. When ran, it will generate a file `trace-*.json` in the root directory. This file can then be visualized by going to `chrome://tracing` or `ui.perfetto.dev`. Both these sites can be navigated using WASD.
