@@ -31,7 +31,9 @@ impl Plugin for FetchPlugin {
 
     fn register(&self, proto: &mut ProtoJSSandbox) -> Result<()> {
         const ALLOWED_URLS: &[&str] = &[
-            "https://ipinfo.io/ip",
+            "https://???/api/v1/stocks",
+            "https://???/api/v1/portfolio",
+            "https://???/api/v1/indices",
             // Add more allowed URLs here as needed
         ];
 
