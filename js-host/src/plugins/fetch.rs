@@ -59,7 +59,7 @@ impl Plugin for FetchPlugin {
 
             // Only allow the hard-coded URLs
             let url_str = url.as_str().trim_end_matches('/');
-            if !ALLOWED_URLS.iter().any(|&allowed| url_str == allowed) {
+            if !ALLOWED_URLS.iter().any(|&allowed| url_str.starts_with(allowed)) {
                 return Err(anyhow::anyhow!(
                     "fetch blocked: URL '{url_str}' is not in the allowed list"
                 ).into());
