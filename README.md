@@ -37,43 +37,67 @@ groups | grep kvm
 
 ## Running
 
-Run JavaScript code inside a Hyperlight micro-VM with QuickJS:
+Start the REST API server:
 
 ```bash
 cd js-host && cargo run --release
 ```
 
-The built-in handler demonstrates three host plugins — **math**, **time**, and **kv** — all callable from guest JavaScript via ES module imports:
-
-```
-  ⚙ Registering plugin: math
-  ⚙ Registering plugin: time
-  ⚙ Registering plugin: kv
-{
-  "math": {
-    "hypotenuse": 5,
-    "log_a": 1.099,
-    "clamped": 7
-  },
-  "kv": {
-    "greeting": "Hello from the VM!",
-    "keys": ["hypotenuse", "greeting"]
-  },
-  "time": {
-    "elapsed_ms": 0,
-    "timestamp": 1774515937
-  }
-}
-```
-
-Pass custom JavaScript and event data as arguments:
+The server listens on `http://127.0.0.1:8888` by default. Override with the `BIND_ADDR` environment variable:
 
 ```bash
-cd js-host && cargo run --release -- \
-  'import * as math from "math";
-   function handler(event) { return { result: math.sqrt(event.x) }; }
-   export { handler };' \
-  '{"x": 144}'
+BIND_ADDR=0.0.0.0:3000 cargo run --release
+```
+
+### API
+
+#### `POST /execute`
+
+Execute JavaScript inside a Hyperlight micro-VM. Each request gets a fresh sandboxed VM.
+
+**Request body** (JSON):
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `code` | string | yes | JavaScript source code. Must export a `handler` function. |
+| `event` | object | no | JSON payload passed to the handler (defaults to `{}`). |
+
+**Example:**
+
+```bash
+curl -s -X POST http://127.0.0.1:8888/execute \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "code": "function handler(e) { return { sum: e.a + e.b }; }\nexport { handler };",
+    "event": {"a": 3, "b": 4}
+  }'
+```
+
+**Success response** (`200`):
+
+```json
+{"result": {"sum": 7}}
+```
+
+**Error response** (`400` for JS errors, `500` for internal errors):
+
+```json
+{"error": "description of what went wrong"}
+```
+
+**Using host plugins from JS:**
+
+```bash
+curl -s -X POST http://127.0.0.1:8888/execute \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "code": "import * as math from \"math\";\nfunction handler(e) { return { result: math.sqrt(e.x) }; }\nexport { handler };",
+    "event": {"x": 144}
+  }'
+```
+
+```json
+{"result": {"result": 12}}
 ```
 
 #### Host Plugins

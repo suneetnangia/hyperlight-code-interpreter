@@ -1,73 +1,79 @@
 mod plugins;
 
+use actix_web::{web, App, HttpResponse, HttpServer};
 use anyhow::Result;
 use hyperlight_js::{SandboxBuilder, Script};
+use serde::{Deserialize, Serialize};
 
-fn main() -> Result<()> {
-    let js_code = std::env::args().nth(1).unwrap_or_else(|| {
-        r#"
-import * as math from "math";
-import * as time from "time";
-import * as kv   from "kv";
-
-function handler(event) {
-    const start = time.now_ms();
-
-    // Math plugin: compute hypotenuse & round
-    const hyp = math.sqrt(math.pow(event.a, 2) + math.pow(event.b, 2));
-    const rounded = math.round(hyp * 100) / 100;
-
-    // KV plugin: store and retrieve values
-    kv.set("greeting", "Hello from the VM!");
-    kv.set("hypotenuse", String(rounded));
-    const greeting = kv.get("greeting");
-    const keys = kv.keys();
-
-    // Math plugin: more operations
-    const log_val = math.round(math.log(event.a) * 1000) / 1000;
-    const clamped = math.max(0, math.min(100, event.a + event.b));
-
-    const elapsed = time.now_ms() - start;
-
-    return {
-        math: { hypotenuse: rounded, log_a: log_val, clamped },
-        kv:   { greeting, keys },
-        time: { elapsed_ms: elapsed, timestamp: time.now_secs() },
-    };
+#[derive(Deserialize)]
+struct ExecuteRequest {
+    /// JavaScript source code to execute
+    code: String,
+    /// JSON event payload passed to the handler (defaults to `{}`)
+    event: Option<serde_json::Value>,
 }
-export { handler };
-"#
-        .into()
-    });
 
-    let event = std::env::args()
-        .nth(2)
-        .unwrap_or_else(|| r#"{"a": 3, "b": 4}"#.into());
+#[derive(Serialize)]
+struct ExecuteResponse {
+    result: serde_json::Value,
+}
 
-    // Build sandbox — creates a Hyperlight micro-VM with QuickJS inside
+#[derive(Serialize)]
+struct ErrorResponse {
+    error: String,
+}
+
+fn run_js(code: &str, event: &str) -> Result<String> {
     let mut proto = SandboxBuilder::new().build()?;
 
-    // Register host plugins (callable from JS via `import * as X from "host:X"`)
     for plugin in plugins::all_plugins() {
-        println!("  ⚙ Registering plugin: {}", plugin.name());
         plugin.register(&mut proto)?;
     }
 
-    // Load the JavaScript runtime into the VM
     let mut sandbox = proto.load_runtime()?;
+    sandbox.add_handler("main", Script::from_content(code))?;
 
-    // Register the JS code as a handler named "main"
-    sandbox.add_handler("main", Script::from_content(&js_code))?;
-
-    // Compile all handlers and get execution-ready sandbox
     let mut loaded = sandbox.get_loaded_sandbox()?;
+    let result = loaded.handle_event("main".to_string(), event.to_string(), None)?;
+    Ok(result)
+}
 
-    // Execute the handler with the event JSON
-    let result = loaded.handle_event("main".to_string(), event, None)?;
+async fn execute(body: web::Json<ExecuteRequest>) -> HttpResponse {
+    let event = body
+        .event
+        .as_ref()
+        .map(|v| v.to_string())
+        .unwrap_or_else(|| "{}".to_string());
 
-    // Pretty-print the JSON result
-    let pretty: serde_json::Value = serde_json::from_str(&result)?;
-    println!("{}", serde_json::to_string_pretty(&pretty)?);
+    let code = body.code.clone();
 
-    Ok(())
+    let result = web::block(move || run_js(&code, &event)).await;
+
+    match result {
+        Ok(Ok(json_str)) => match serde_json::from_str::<serde_json::Value>(&json_str) {
+            Ok(value) => HttpResponse::Ok().json(ExecuteResponse { result: value }),
+            Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
+                error: format!("failed to parse JS result: {e}"),
+            }),
+        },
+        Ok(Err(e)) => HttpResponse::BadRequest().json(ErrorResponse {
+            error: format!("{e}"),
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ErrorResponse {
+            error: format!("execution panicked: {e}"),
+        }),
+    }
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    let bind = std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:8888".to_string());
+    println!("Listening on http://{bind}");
+
+    HttpServer::new(|| {
+        App::new().route("/execute", web::post().to(execute))
+    })
+    .bind(&bind)?
+    .run()
+    .await
 }
