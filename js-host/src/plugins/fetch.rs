@@ -48,19 +48,19 @@ impl Plugin for FetchPlugin {
                 "http" => {
                     let host = url.host_str().unwrap_or_default();
                     if host != "localhost" && host != "127.0.0.1" && host != "::1" {
-                        anyhow::bail!("HTTP is only allowed for localhost; use HTTPS for remote hosts");
+                        return Err(anyhow::anyhow!("HTTP is only allowed for localhost; use HTTPS for remote hosts").into());
                     }
                 }
-                other => anyhow::bail!("unsupported scheme: {other}"),
+                other => return Err(anyhow::anyhow!("unsupported scheme: {other}").into()),
             }
 
             // If FETCH_ALLOWED_HOST is set, restrict to that host
             if let Some(ref allowed) = allowed_host {
                 let host = url.host_str().unwrap_or_default();
                 if host != allowed.as_str() {
-                    anyhow::bail!(
+                    return Err(anyhow::anyhow!(
                         "fetch blocked: host '{host}' is not in the allowed list (allowed: {allowed})"
-                    );
+                    ).into());
                 }
             }
 
@@ -82,7 +82,7 @@ impl Plugin for FetchPlugin {
                 "PATCH" => client.patch(url.as_str()),
                 "DELETE" => client.delete(url.as_str()),
                 "HEAD" => client.head(url.as_str()),
-                other => anyhow::bail!("unsupported HTTP method: {other}"),
+                other => return Err(anyhow::anyhow!("unsupported HTTP method: {other}").into()),
             };
 
             if let Some(hdrs) = &parsed.headers {
