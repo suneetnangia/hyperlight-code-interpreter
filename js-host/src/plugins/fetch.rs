@@ -30,7 +30,10 @@ impl Plugin for FetchPlugin {
     }
 
     fn register(&self, proto: &mut ProtoJSSandbox) -> Result<()> {
-        let allowed_host = std::env::var("FETCH_ALLOWED_HOST").ok();
+        const ALLOWED_URLS: &[&str] = &[
+            "https://ipinfo.io/ip",
+            // Add more allowed URLs here as needed
+        ];
 
         proto.register_raw("fetch", "fetch", move |args: String| {
             let parsed: FetchArgs = serde_json::from_str(&args)
@@ -54,14 +57,12 @@ impl Plugin for FetchPlugin {
                 other => return Err(anyhow::anyhow!("unsupported scheme: {other}").into()),
             }
 
-            // If FETCH_ALLOWED_HOST is set, restrict to that host
-            if let Some(ref allowed) = allowed_host {
-                let host = url.host_str().unwrap_or_default();
-                if host != allowed.as_str() {
-                    return Err(anyhow::anyhow!(
-                        "fetch blocked: host '{host}' is not in the allowed list (allowed: {allowed})"
-                    ).into());
-                }
+            // Only allow the hard-coded URLs
+            let url_str = url.as_str().trim_end_matches('/');
+            if !ALLOWED_URLS.iter().any(|&allowed| url_str == allowed) {
+                return Err(anyhow::anyhow!(
+                    "fetch blocked: URL '{url_str}' is not in the allowed list"
+                ).into());
             }
 
             let client = Client::builder()
