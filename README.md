@@ -99,6 +99,18 @@ curl -s -X POST http://127.0.0.1:8888/execute \
 ```json
 {"result": {"result": 12}}
 ```
+```bash
+curl -s -X POST http://127.0.0.1:8888/execute \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "code": "import * as fetch from \"fetch\";\nfunction handler(e) { return { result: fetch.fetch(e) }; }\nexport { handler };",
+    "event": "https://ipinfo.io/ip"
+  }'
+```
+
+```json
+{"result": {"result": 192.168.1.1}} //(your IP address here <g>)
+```
 
 #### Host Plugins
 
