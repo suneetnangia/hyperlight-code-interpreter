@@ -1,7 +1,6 @@
 mod indices;
 mod stocks;
 
-
 use anyhow::Result;
 use hyperlight_js::ProtoJSSandbox;
 
