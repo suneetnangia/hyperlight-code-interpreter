@@ -67,7 +67,7 @@ async fn execute(body: web::Json<ExecuteRequest>) -> HttpResponse {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let bind = std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:8888".to_string());
+    let bind = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8888".to_string());
     println!("Listening on http://{bind}");
 
     HttpServer::new(|| {
