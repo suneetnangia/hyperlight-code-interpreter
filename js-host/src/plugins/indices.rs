@@ -22,6 +22,9 @@ impl Plugin for IndicesPlugin {
 
             let response = reqwest::blocking::get(&url)
                 .map_err(|_| "failed to perform HTTP request")?;
+            if response.status() == 404 {
+                return Ok("null".to_string());
+            }
             let body = response.text()
                 .map_err(|_| "failed to read response body")?;
             Ok(body)
