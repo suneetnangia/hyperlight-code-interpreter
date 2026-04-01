@@ -30,7 +30,7 @@ impl Plugin for IndicesPlugin {
             }
             let body = response.text()
                 .map_err(|_| "failed to read response body")?;
-            Ok(body)
+            Ok(serde_json::to_string(&body)?)
         })?;
 
         Ok(())
