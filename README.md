@@ -109,8 +109,20 @@ Plugins are Rust functions registered as host modules on the sandbox **before** 
 | **math** | `"math"` | `sqrt`, `pow`, `abs`, `floor`, `ceil`, `round`, `log`, `min`, `max` |
 | **time** | `"time"` | `now_ms` (epoch millis), `now_secs` (epoch seconds) |
 | **kv** | `"kv"` | `set`, `get`, `delete`, `keys` (in-memory key-value store) |
+| **indices** | `"indices"` | `get` (fetch index data from the indices service) |
 
 To add a new plugin, create a struct implementing the `Plugin` trait in `js-host/src/plugins/` and register it in `all_plugins()`. No changes to `main.rs` needed.
+
+**Querying the indices plugin:**
+
+```bash
+curl -s -X POST http://127.0.0.1:8888/execute \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "code": "import * as indices from \"indices\";\nasync function handler(e) { const result = await indices.get(e.symbol); return { data: result }; }\nexport { handler };",
+    "event": {"symbol": "SPX"}
+  }'
+```
 
 ```
 SandboxBuilder::new().build()  →  ProtoJSSandbox
