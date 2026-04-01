@@ -1,7 +1,18 @@
 use anyhow::Result;
 use hyperlight_js::ProtoJSSandbox;
+use serde::{Deserialize, Serialize};
 
 use super::Plugin;
+
+#[derive(Deserialize, Serialize)]
+pub struct Index {
+    pub name: String,
+    pub symbol: String,
+    pub value: f64,
+    pub change: f64,
+    pub change_percent: f64,
+    pub timestamp: String,
+}
 
 pub struct IndicesPlugin {
     pub hostname: String,
@@ -30,7 +41,19 @@ impl Plugin for IndicesPlugin {
             }
             let body = response.text()
                 .map_err(|_| "failed to read response body")?;
-            Ok(serde_json::to_string(&body)?)
+
+            match &symbol {
+                Some(_) => {
+                    let index: Index = serde_json::from_str(&body)
+                        .map_err(|_| "failed to parse index response")?;
+                    Ok(serde_json::to_string(&index)?)
+                }
+                None => {
+                    let indices: Vec<Index> = serde_json::from_str(&body)
+                        .map_err(|_| "failed to parse indices response")?;
+                    Ok(serde_json::to_string(&indices)?)
+                }
+            }
         })?;
 
         Ok(())
