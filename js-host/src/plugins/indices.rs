@@ -3,7 +3,9 @@ use hyperlight_js::ProtoJSSandbox;
 
 use super::Plugin;
 
-pub struct IndicesPlugin;
+pub struct IndicesPlugin {
+    pub hostname: String,
+}
 
 impl Plugin for IndicesPlugin {
     fn name(&self) -> &str {
@@ -11,13 +13,14 @@ impl Plugin for IndicesPlugin {
     }
 
     fn register(&self, proto: &mut ProtoJSSandbox) -> Result<()> {
+        let hostname = self.hostname.clone();
         proto.register_raw("indices", "get", move |args: String| {
             let parsed: Vec<Option<String>> = serde_json::from_str(&args)?;
             let symbol = parsed.first().cloned().flatten();
 
             let url = match &symbol {
-                Some(s) => format!("https://127.0.0.1/api/v1/indices/{s}"),
-                None => "https://127.0.0.1/api/v1/indices".to_string(),
+                Some(s) => format!("https://{}/api/v1/indices/{s}", hostname),
+                None => format!("https://{}/api/v1/indices", hostname),
             };
 
             let response = reqwest::blocking::get(&url)

@@ -11,11 +11,13 @@ pub trait Plugin {
     fn register(&self, proto: &mut ProtoJSSandbox) -> Result<()>;
 }
 
-pub fn all_plugins() -> Vec<Box<dyn Plugin>> {
+pub fn all_plugins(indices_hostname: &str) -> Vec<Box<dyn Plugin>> {
     vec![
         Box::new(math::MathPlugin),
         Box::new(time::TimePlugin),
         Box::new(kv::KvPlugin),
-        Box::new(indices::IndicesPlugin),
+        Box::new(indices::IndicesPlugin {
+            hostname: indices_hostname.to_string(),
+        }),
     ]
 }

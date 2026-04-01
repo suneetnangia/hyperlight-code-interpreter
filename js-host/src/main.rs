@@ -5,6 +5,16 @@ use anyhow::Result;
 use hyperlight_js::{SandboxBuilder, Script};
 use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Clone)]
+struct Config {
+    indices: IndicesConfig,
+}
+
+#[derive(Deserialize, Clone)]
+struct IndicesConfig {
+    hostname: String,
+}
+
 #[derive(Deserialize)]
 struct ExecuteRequest {
     /// JavaScript source code to execute
@@ -23,10 +33,10 @@ struct ErrorResponse {
     error: String,
 }
 
-fn run_js(code: &str, event: &str) -> Result<String> {
+fn run_js(code: &str, event: &str, config: &Config) -> Result<String> {
     let mut proto = SandboxBuilder::new().build()?;
 
-    for plugin in plugins::all_plugins() {
+    for plugin in plugins::all_plugins(&config.indices.hostname) {
         plugin.register(&mut proto)?;
     }
 
@@ -38,7 +48,10 @@ fn run_js(code: &str, event: &str) -> Result<String> {
     Ok(result)
 }
 
-async fn execute(body: web::Json<ExecuteRequest>) -> HttpResponse {
+async fn execute(
+    body: web::Json<ExecuteRequest>,
+    config: web::Data<Config>,
+) -> HttpResponse {
     let event = body
         .event
         .as_ref()
@@ -46,8 +59,9 @@ async fn execute(body: web::Json<ExecuteRequest>) -> HttpResponse {
         .unwrap_or_else(|| "{}".to_string());
 
     let code = body.code.clone();
+    let cfg = config.get_ref().clone();
 
-    let result = web::block(move || run_js(&code, &event)).await;
+    let result = web::block(move || run_js(&code, &event, &cfg)).await;
 
     match result {
         Ok(Ok(json_str)) => match serde_json::from_str::<serde_json::Value>(&json_str) {
@@ -67,11 +81,19 @@ async fn execute(body: web::Json<ExecuteRequest>) -> HttpResponse {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let config_str = std::fs::read_to_string("config.toml")
+        .expect("failed to read config.toml");
+    let config: Config = toml::from_str(&config_str)
+        .expect("failed to parse config.toml");
+    let config = web::Data::new(config);
+
     let bind = std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:8888".to_string());
     println!("Listening on http://{bind}");
 
-    HttpServer::new(|| {
-        App::new().route("/execute", web::post().to(execute))
+    HttpServer::new(move || {
+        App::new()
+            .app_data(config.clone())
+            .route("/execute", web::post().to(execute))
     })
     .bind(&bind)?
     .run()
