@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 struct Config {
     indices: IndicesConfig,
     stocks: StocksConfig,
+    portfolio: PortfolioConfig,
 }
 
 #[derive(Deserialize, Clone)]
@@ -18,6 +19,11 @@ struct IndicesConfig {
 
 #[derive(Deserialize, Clone)]
 struct StocksConfig {
+    hostname: String,
+}
+
+#[derive(Deserialize, Clone)]
+struct PortfolioConfig {
     hostname: String,
 }
 
@@ -42,7 +48,7 @@ struct ErrorResponse {
 fn run_js(code: &str, event: &str, config: &Config) -> Result<String> {
     let mut proto = SandboxBuilder::new().build()?;
 
-    for plugin in plugins::all_plugins(&config.indices.hostname, &config.stocks.hostname) {
+    for plugin in plugins::all_plugins(&config.indices.hostname, &config.stocks.hostname, &config.portfolio.hostname) {
         plugin.register(&mut proto)?;
     }
 

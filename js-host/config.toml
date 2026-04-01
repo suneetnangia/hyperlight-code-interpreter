@@ -3,3 +3,6 @@ hostname = "172.17.0.3:8000"
 
 [stocks]
 hostname = "172.17.0.3:8000"
+
+[portfolio]
+hostname = "172.17.0.3:8000"
