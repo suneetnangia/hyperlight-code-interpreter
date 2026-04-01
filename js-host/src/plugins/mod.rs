@@ -1,3 +1,4 @@
+mod indices;
 mod kv;
 mod math;
 mod time;
@@ -15,5 +16,6 @@ pub fn all_plugins() -> Vec<Box<dyn Plugin>> {
         Box::new(math::MathPlugin),
         Box::new(time::TimePlugin),
         Box::new(kv::KvPlugin),
+        Box::new(indices::IndicesPlugin),
     ]
 }
