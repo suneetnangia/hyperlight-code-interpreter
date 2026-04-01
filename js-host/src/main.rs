@@ -87,7 +87,7 @@ async fn main() -> std::io::Result<()> {
         .expect("failed to parse config.toml");
     let config = web::Data::new(config);
 
-    let bind = std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:8888".to_string());
+    let bind = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8888".to_string());
     println!("Listening on http://{bind}");
 
     HttpServer::new(move || {
