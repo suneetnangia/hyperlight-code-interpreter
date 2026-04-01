@@ -19,8 +19,8 @@ impl Plugin for IndicesPlugin {
             let symbol = parsed.first().cloned().flatten();
 
             let url = match &symbol {
-                Some(s) => format!("https://{}/api/v1/indices/{s}", hostname),
-                None => format!("https://{}/api/v1/indices", hostname),
+                Some(s) => format!("http://{}/api/v1/indices/{s}", hostname),
+                None => format!("http://{}/api/v1/indices", hostname),
             };
 
             let response = reqwest::blocking::get(&url)
