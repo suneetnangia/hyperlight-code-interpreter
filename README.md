@@ -33,7 +33,7 @@ groups | grep kvm
 | Directory | Description |
 |-----------|-------------|
 | `js-host/` | Runs JavaScript inside a Hyperlight micro-VM via [hyperlight-js](https://github.com/hyperlight-dev/hyperlight-js), with a host plugin system |
-| `js-host/src/plugins/` | Host-side plugins (math, time, kv) callable from guest JS via ES module imports |
+| `js-host/src/plugins/` | Host-side plugins callable from guest JS via ES module imports |
 
 ## Running
 
@@ -87,28 +87,12 @@ curl -s -X POST http://127.0.0.1:8888/execute \
 
 **Using host plugins from JS:**
 
-```bash
-curl -s -X POST http://127.0.0.1:8888/execute \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "code": "import * as math from \"math\";\nfunction handler(e) { return { result: math.sqrt(e.x) }; }\nexport { handler };",
-    "event": {"x": 144}
-  }'
-```
-
-```json
-{"result": {"result": 12}}
-```
-
 #### Host Plugins
 
-Plugins are Rust functions registered as host modules on the sandbox **before** the JS runtime loads. Guest JavaScript imports them as ES modules (e.g. `import * as math from "math"`). This follows the same pattern used in [hyperlight](https://github.com/hyperlight-dev/hyperlight) and [hyperagent](https://github.com/hyperlight-dev/hyperagent).
+Plugins are Rust functions registered as host modules on the sandbox **before** the JS runtime loads. Guest JavaScript imports them as ES modules (e.g. `import * as indices from "indices"`). This follows the same pattern used in [hyperlight](https://github.com/hyperlight-dev/hyperlight) and [hyperagent](https://github.com/hyperlight-dev/hyperagent).
 
 | Plugin | Module | Functions |
 |--------|--------|-----------|
-| **math** | `"math"` | `sqrt`, `pow`, `abs`, `floor`, `ceil`, `round`, `log`, `min`, `max` |
-| **time** | `"time"` | `now_ms` (epoch millis), `now_secs` (epoch seconds) |
-| **kv** | `"kv"` | `set`, `get`, `delete`, `keys` (in-memory key-value store) |
 | **indices** | `"indices"` | `get` (fetch index data from the indices service) |
 
 To add a new plugin, create a struct implementing the `Plugin` trait in `js-host/src/plugins/` and register it in `all_plugins()`. No changes to `main.rs` needed.
