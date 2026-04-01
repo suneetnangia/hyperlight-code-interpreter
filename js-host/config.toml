@@ -1,2 +1,5 @@
 [indices]
 hostname = "172.17.0.3:8000"
+
+[stocks]
+hostname = "172.17.0.3:8000"
