@@ -60,17 +60,13 @@ Execute JavaScript inside a Hyperlight micro-VM. Each request gets a fresh sandb
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `code` | string | yes | JavaScript source code. Must export a `handler` function. |
-| `event` | object | no | JSON payload passed to the handler (defaults to `{}`). |
 
 **Example:**
 
 ```bash
 curl -s -X POST http://127.0.0.1:8888/execute \
   -H 'Content-Type: application/json' \
-  -d '{
-    "code": "function handler(e) { return { sum: e.a + e.b }; }\nexport { handler };",
-    "event": {"a": 3, "b": 4}
-  }'
+  -d '{"code": "function handler() { return { sum: 3 + 4 }; }\nexport { handler };"}'
 ```
 
 **Success response** (`200`):
